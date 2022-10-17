@@ -2,6 +2,10 @@
 
 Rockland.py handles talking to the Rockland Cloud using the Rockland Cloud API.
 
+By default, configuration files are stored in `~/.config/Rockland`
+
+If the file `credentials.yaml` does not exist in the configuration directory, you will be prompted for a username, password, and organization.
+
 To create a project use:
 `./Rockland.py --debug project create probar "Probar un proyecto" 123`
 
