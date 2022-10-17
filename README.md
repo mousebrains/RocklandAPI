@@ -6,5 +6,7 @@ To create a project use:
 `./Rockland.py --debug project create probar "Probar un proyecto" 123`
 
 To list existing projects use:
-`--debug project list`
+`./Rockland.py --debug project list`
+
+This code has only been tested on a MacOS system, so far.
 
