@@ -106,6 +106,7 @@ class Config:
         if not os.path.isdir(dirname):
             logging.info("Creating %s", dirname)
             os.makedirs(dirname, exist_ok=True) # exist_ok for race conditions
+            os.chmod(dirname, 0o700) # Make readable only by this user
 
         with open(fn, "w") as fp:
             fp.write("# Created ")
