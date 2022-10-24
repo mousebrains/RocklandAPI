@@ -43,7 +43,7 @@ def loggerAddArgs(parser:ArgumentParser) -> None:
     gg.add_argument("--debug", action="store_true", help="Enable very verbose logging")
     gg.add_argument("--verbose", action="store_true", help="Enable verbose logging")
 
-def mkLogger(args:ArgumentParser, 
+def mkLogger(args:ArgumentParser,
         fmt:str="%(asctime)s %(threadName)s %(levelname)s: %(message)s",
         name:str=None,
         logLevel:str="WARNING") -> logging.Logger:
@@ -236,7 +236,7 @@ class Credentials:
         if not info: raise FileNotFoundError(fn)
         logging.debug("Info %s", info)
         for (key, prompt) in prompts:
-            if key not in info: 
+            if key not in info:
                 logging.error("%s not found in %s, %s", key, fn, prompt)
                 raise ValueError
         return info
@@ -275,9 +275,9 @@ class Login:
 
     def token(self, s:Session) -> str:
         if self.__expiry is not None:
-            now = datetime.datetime.now(tz=datetime.timezone.utc) 
+            now = datetime.datetime.now(tz=datetime.timezone.utc)
             threshold = now - datetime.timedelta(seconds=10) # Renew if within 10 seconds
-            if self.__expiry > threshold: 
+            if self.__expiry > threshold:
                 return self.__token
 
         # No token or expired, so fetch a new one
@@ -291,7 +291,7 @@ class Login:
         self.__expiry = RAPI.parseTimestamp(body["tokenExpiry"])
         logging.info("token '%s' expiry %s", self.__token, self.__expiry)
         self.__config.save(self.__filename, {
-            "token": self.__token, 
+            "token": self.__token,
             "expiry": self.__expiry.isoformat()})
         return self.__token
 
@@ -317,7 +317,7 @@ class ProjectCreate:
             logging.info("COOKIES %s", req.cookies)
             logging.info("ELAPSED %s", req.elapsed)
             logging.info("encoding %s", req.encoding)
-            logging.info("headers\n%s", json.dumps(req.headers, sort_keys=True, indent=4))
+            logging.info("headers\n%s", json.dumps(dict(req.headers), sort_keys=True, indent=4))
             logging.info("history %s", req.history)
             logging.info("is_permanent_redirect %s", req.is_permanent_redirect)
             logging.info("is_redirect %s", req.is_redirect)
@@ -351,12 +351,12 @@ class ProjectList:
             info = RAPI.checkResponse(req)
             if info is None: return
             if "body" not in info:
-                logging.warning("No body returned for ProjectList\n%s", 
+                logging.warning("No body returned for ProjectList\n%s",
                                 json.dumps(info, sort_keys=True, indent=4))
                 return
             body = info["body"]
             if not body:
-                logging.warning("No entries returned for ProjectList\n%s", 
+                logging.warning("No entries returned for ProjectList\n%s",
                                 json.dumps(info, sort_keys=True, indent=4))
                 return
             for item in body:
