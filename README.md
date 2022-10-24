@@ -12,5 +12,4 @@ To create a project use:
 To list existing projects use:
 `./Rockland.py --debug project list`
 
-This code has only been tested on a MacOS system, so far.
-
+This code has only been tested on a MacOS system, so far. Jesse found that this works python 3.10 but not 3.8.
