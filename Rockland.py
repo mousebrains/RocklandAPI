@@ -514,32 +514,6 @@ class ProjectEdit:
         parser.add_argument("description", type=str, help="Project description")
         parser.add_argument("sn", type=int, nargs="+", help="Instrument serial numbers")
 
-class ProjectList:
-    def __init__(self, args:ArgumentParser) -> None:
-        login = Login(args) # Get username/password information
-        url = RAPI.mkURL(args, args.projectList)
-        with Session() as s:
-            token = login.token(s)
-            hdrs = RAPI.mkHeaders(token)
-            req = s.request("GET", url, headers=hdrs)
-            info = RAPI.checkResponse(req)
-            if info is None: return
-            if "body" not in info:
-                logging.warning("No body returned for ProjectList\n%s",
-                                json.dumps(info, sort_keys=True, indent=4))
-                return
-            body = info["body"]
-            if not body:
-                logging.warning("No entries returned for ProjectList\n%s",
-                                json.dumps(info, sort_keys=True, indent=4))
-                return
-            for item in body:
-                logging.info("Project %s", json.dumps(item, sort_keys=True, indent=4))
-
-    @staticmethod
-    def addArgs(parser:ArgumentParser) -> None:
-        parser.add_argument("--save", action="store_true", help="Save project information locally")
-
 class ProjectEdit:
     def __init__(self, args:ArgumentParser) -> None:
         self.__args = args
