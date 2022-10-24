@@ -301,9 +301,9 @@ class Login:
 
     def token(self, s:Session) -> str:
         if self.__expiry is not None:
-            now = datetime.datetime.now(tz=datetime.timezone.utc) 
+            now = datetime.datetime.now(tz=datetime.timezone.utc)
             threshold = now - datetime.timedelta(seconds=1) # Renew if within 1 second
-            if self.__expiry > threshold: 
+            if self.__expiry > threshold:
                 return self.__token
 
         # No token or expired, so fetch a new one
@@ -413,13 +413,13 @@ class Projects:
         if info:
             self.__info[project] = info
             return info
-       
+
         if self.__qFetch:
             login = Login(args) # Get username/password information
             items = ProjectList(args, qFetch=False).execute(args, self.__s, config, login)
             self.__info = items if items else {}
             self.__qFetch = False
-        
+
         if project in self.__info:
             return self.__info[project]
 
@@ -569,7 +569,7 @@ class ProjectDelete:
     def addArgs(parser:ArgumentParser) -> None:
         parser.add_argument("project", type=str, nargs="+", help="Project name(s) to delete")
 
-    def remove(self, name:str, projectToken:str, s:Session, 
+    def remove(self, name:str, projectToken:str, s:Session,
                url:str, config:Config, login:Login) -> None:
         token = login.token(s)
         hdrs = RAPI.mkHeaders(token)
@@ -589,7 +589,7 @@ class Project:
                 "list": ProjectList,
                 "edit": ProjectEdit,
                 "delete": ProjectDelete,
-                "profiles": ProjectProfiles,
+                "profiles": ProjectProfile,
                 }
         logging.info("cmd %s mapping %s", args.cmdProject, mapping[args.cmdProject](args))
 
@@ -626,7 +626,7 @@ class Upload:
                 ("", ("file", open(args.filename, "rb"), "application/octet-stream")),
                 ("FileType", (None, args.filetype, "text/plain")),
                 ]
- 
+
         config = Config(args) # Where config files are located
         login = Login(args) # Get username/password information
         url = RAPI.mkURL(args, args.profileNew)
