@@ -407,7 +407,7 @@ class Projects:
         if project in self.__info:
             return self.__info[project]
 
-        args = self.__arga
+        args = self.__args
         config = Config(args) # For where to save files
         info = config.loadProject(project)
         if info:
