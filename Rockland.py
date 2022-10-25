@@ -107,6 +107,12 @@ class Config:
     def saveProject(self, project:str, info) -> dict:
         return self.save("project." + project, info)
 
+    def loadProfiles(self, project:str) -> dict:
+        return self.load("profiles." + project)
+
+    def saveProfiles(self, project:str, info) -> dict:
+        return self.save("profiles." + project, info)
+
     def unlinkProject(self, project:str) -> None:
         fn = self.__mkfn("project." + project)
         if os.path.isfile(fn):
@@ -170,7 +176,7 @@ class RAPI:
                              help="Create a project")
             grp.add_argument("--projectList", type=str, default="Project/List",
                              help="Project list path")
-            grp.add_argument("--projectProfile", type=str, default="Project/Profile",
+            grp.add_argument("--projectProfiles", type=str, default="Project/Profiles",
                              help="Project list profiles path")
             grp.add_argument("--projectEdit", type=str, default="Project/Edit",
                              help="Project edit path")
@@ -396,11 +402,60 @@ class ProjectList:
             config.saveProject(item["name"], item)
         return items
 
+class ProjectProfiles:
+    def __init__(self, args:ArgumentParser, qFetch:bool=True) -> None:
+        self.__args = args
+        if qFetch:
+            config = Config(args) # For where to save files
+            login = Login(args) # Get username/password information
+            with Session() as s:
+                self.execute(args.project, args, s, config, login)
+
+    @staticmethod
+    def addArgs(parser:ArgumentParser) -> None:
+        parser.add_argument("project", type=str, help="Project name to list profiles for")
+        parser.add_argument("--save", action="store_true",
+                            help="Save project profile information locally")
+
+    def execute(self, project:str, args:ArgumentParser,
+                s:Session, config:Config, login:Login) -> dict:
+        logging.info("TPW %s", project)
+        args = self.__args
+        projToken = Projects(args, s).token(project)
+        if projToken is None: return None
+        url = RAPI.mkURL(args, args.projectProfiles)
+        token = login.token(s)
+        payload = {"projectToken": projToken}
+        hdrs = RAPI.mkHeaders(token)
+        req = s.get(url, headers=hdrs, params=payload)
+        logging.info("TPW %s", req)
+        info = RAPI.checkResponse(req)
+        if info is None: return None
+        if "body" not in info:
+            logging.warning("No body returned for ProjectProfiles\n%s",
+                            json.dumps(info, sort_keys=True, indent=4))
+            return None
+        body = info["body"]
+        if not body:
+            logging.info("No entries returned for ProjectProfiles\n%s",
+                            json.dumps(info, sort_keys=True, indent=4))
+            return None
+        if args.save:
+            logging.info("SAVE %s", project)
+            config.saveProfiles(project, body)
+            logging.info("SAVED %s", project)
+        items = {}
+        for item in body:
+            items[item["name"]] = item
+            logging.info("Profile %s", json.dumps(item, sort_keys=True, indent=4))
+        return items
+
 class Projects:
     def __init__(self, args:ArgumentParser, s:Session) -> None:
         self.__args = args
         self.__s = s
         self.__info = {}
+        self.__profiles = {}
         self.__qFetch = True
 
     def  __getitem__(self, project:str) -> dict:
@@ -408,7 +463,7 @@ class Projects:
             return self.__info[project]
 
         args = self.__args
-        config = Config(args) # For where to save files
+        config = Config(args) # For where to load files from
         info = config.loadProject(project)
         if info:
             self.__info[project] = info
@@ -430,42 +485,17 @@ class Projects:
         info = self[project]
         return info["token"] if info and "token" in info else None
 
-class ProjectProfile:
-    def __init__(self, args:ArgumentParser, qFetch:bool=True) -> None:
-        self.__args = args
-        if qFetch:
-            config = Config(args) # For where to save files
-            login = Login(args) # Get username/password information
-            with Session() as s:
-                self.execute(args, s, config, login)
-
-    @staticmethod
-    def addArgs(parser:ArgumentParser) -> None:
-        parser.add_argument("--save", action="store_true",
-                            help="Save project profile information locally")
-
-    def execute(self, args:ArgumentParser, s:Session, config:Config, login:Login) -> dict:
-        url = RAPI.mkURL(args, args.projectProfile)
-        token = login.token(s)
-        hdrs = RAPI.mkHeaders(token)
-        req = s.get(url, headers=hdrs)
-        info = RAPI.checkResponse(req)
-        if info is None: return None
-        if "body" not in info:
-            logging.warning("No body returned for ProjectList\n%s",
-                            json.dumps(info, sort_keys=True, indent=4))
-            return None
-        body = info["body"]
-        if not body:
-            logging.info("No entries returned for ProjectList\n%s",
-                            json.dumps(info, sort_keys=True, indent=4))
-            return None
-        items = {}
-        for item in body:
-            items[item["name"]] = item
-            logging.info("Project %s", json.dumps(item, sort_keys=True, indent=4))
-            config.saveProfile(item["name"], item)
-        return items
+    def profiles(self, project:str) -> tuple:
+        token = self.token(project)
+        if not token: return (None, None)
+        if project in self.__profiles: return (token, self.__profiles[project])
+        args = self.__args
+        config = Config(args) # For where to load files from
+        login = Login(args) # Get username/password information
+        self.__profiles[project] = ProjectProfiles(args, qFetch=False).execute(
+                args, s, config, login)
+        if project in self.__profiles: return (token, self.__profiles[project])
+        return (None, None)
 
 class ProjectEdit:
     def __init__(self, args:ArgumentParser) -> None:
@@ -563,7 +593,7 @@ class Project:
                 "list": ProjectList,
                 "edit": ProjectEdit,
                 "delete": ProjectDelete,
-                "profiles": ProjectProfile,
+                "profiles": ProjectProfiles,
                 }
         logging.info("cmd %s mapping %s", args.cmdProject, mapping[args.cmdProject](args))
 
@@ -592,6 +622,10 @@ class Project:
         ProjectDelete.addArgs(a.add_parser("delete",
                                            description="Delete a project",
                                            help="Delete a project in the Rockland Cloud",
+                                           ))
+        ProjectProfiles.addArgs(a.add_parser("profiles",
+                                           description="List profiles in a project",
+                                           help="List profiles for a project in the Rockland Cloud",
                                            ))
 
 class Upload:
