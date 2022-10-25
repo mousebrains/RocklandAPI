@@ -414,12 +414,9 @@ class ProjectProfiles:
     @staticmethod
     def addArgs(parser:ArgumentParser) -> None:
         parser.add_argument("project", type=str, help="Project name to list profiles for")
-        parser.add_argument("--save", action="store_true",
-                            help="Save project profile information locally")
 
     def execute(self, project:str, args:ArgumentParser,
                 s:Session, config:Config, login:Login) -> dict:
-        logging.info("TPW %s", project)
         args = self.__args
         projToken = Projects(args, s).token(project)
         if projToken is None: return None
@@ -428,7 +425,6 @@ class ProjectProfiles:
         payload = {"projectToken": projToken}
         hdrs = RAPI.mkHeaders(token)
         req = s.get(url, headers=hdrs, params=payload)
-        logging.info("TPW %s", req)
         info = RAPI.checkResponse(req)
         if info is None: return None
         if "body" not in info:
@@ -440,14 +436,11 @@ class ProjectProfiles:
             logging.info("No entries returned for ProjectProfiles\n%s",
                             json.dumps(info, sort_keys=True, indent=4))
             return None
-        if args.save:
-            logging.info("SAVE %s", project)
-            config.saveProfiles(project, body)
-            logging.info("SAVED %s", project)
         items = {}
         for item in body:
             items[item["name"]] = item
             logging.info("Profile %s", json.dumps(item, sort_keys=True, indent=4))
+        config.saveProfiles(project, items)
         return items
 
 class Projects:
@@ -493,7 +486,7 @@ class Projects:
         config = Config(args) # For where to load files from
         login = Login(args) # Get username/password information
         self.__profiles[project] = ProjectProfiles(args, qFetch=False).execute(
-                args, s, config, login)
+                project, args, self.__s, config, login)
         if project in self.__profiles: return (token, self.__profiles[project])
         return (None, None)
 
@@ -640,18 +633,14 @@ class Upload:
         url = RAPI.mkURL(args, args.profileNew)
 
         with Session() as s:
-            prj = config.loadProject(args.project)
-            if prj is None:
-                items = ProjectList(args, qFetch=False).execute(args, s, config, login)
-                if not prj or args.project not in prj:
-                    logging.warning("Unknown project, %s", args.project)
-                    sys.exit(1)
-                prj = items[args.project]
+            prj = Projects(args, s).token(args.project)
+            if not prj: return
+
             hdrs = RAPI.mkHeaders(login.token(s))
             del hdrs["Content-Type"]
 
             logging.info("Headers\n%s", json.dumps(hdrs, sort_keys=True, indent=4))
-            files.append(("ProjectToken", (None, prj["token"], "text/plain")))
+            files.append(("ProjectToken", (None, prj, "text/plain")))
             logging.info("%s", files)
             logging.info("url %s", url)
             req = s.post(url, headers=hdrs, files=files)
@@ -683,13 +672,59 @@ class Upload:
 
 class Download:
     def __init__(self, args:ArgumentParser) -> None:
-        pass
+        config = Config(args) # Where config files are located
+        login = Login(args) # Get username/password information
+        url = RAPI.mkURL(args, args.dataGet)
+
+        with Session() as s:
+            prj = Projects(args, s)
+            (token, profiles) = prj.profiles(args.project)
+            if not token: return
+            params = {
+                    "projectToken": token, 
+                    # "DataTpeIds": [0x100, 0x110],
+                    "profileTokens": [],
+                    }
+            for key in profiles:
+                profile = profiles[key]
+                logging.info("profile %s", profile)
+                params["profileTokens"].append(profile["token"])
+
+            params["profileTokens"] = ",".join(params["profileTokens"])
+            # params["DataTpeIds"] = ",".join(map(hex, params["DataTpeIds"]))
+
+            hdrs = RAPI.mkHeaders(login.token(s))
+            logging.info("Headers\n%s", json.dumps(hdrs, sort_keys=True, indent=4))
+            logging.info("Params\n%s", json.dumps(params, sort_keys=True, indent=4))
+            logging.info("url %s", url)
+            # url = "http://unms.mousebrains.com:4444/api/Data/Get"
+            req = s.get(url, headers=hdrs, params=params)
+            # logging.info("COOKIES %s", req.cookies)
+            # logging.info("ELAPSED %s", req.elapsed)
+            # logging.info("encoding %s", req.encoding)
+            # logging.info("headers\n%s", req.headers)
+            # logging.info("history %s", req.history)
+            # logging.info("is_permanent_redirect %s", req.is_permanent_redirect)
+            # logging.info("is_redirect %s", req.is_redirect)
+            # logging.info("links %s", req.links)
+            # logging.info("next %s", req.next)
+            # logging.info("ok %s", req.ok)
+            # logging.info("reason %s", req.reason)
+            # logging.info("request %s", req.request)
+            # logging.info("status_code %s", req.status_code)
+            # logging.info("text %s", req.text)
+            # logging.info("url %s", req.url)
+            info = RAPI.checkResponse(req)
+            if info is None: return
+            logging.info("INFO\n%s", json.dumps(info, sort_keys=True, indent=4))
+
+
 
     @staticmethod
     def addArgs(parser:ArgumentParser) -> None:
-        pass
-        # parser.add_argument("project", type=str, help="Project name to store data for")
-        # parser.add_argument("qfile", type=str, help="q-file to upload")
+        parser.add_argument("project", type=str, help="Project name to store data for")
+        parser.add_argument("--directory", type=str, default="result",
+                            help="Where to save downloaded files to")
 
 def main():
     parser = ArgumentParser(description="Rockland Cloud API")
