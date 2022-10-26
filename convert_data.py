@@ -6,8 +6,7 @@ import yaml
 
 
 def load_var_mapping(file_path:str="variable_mapping.yml") -> tuple:
-    """The variable map is a dict that maps type id to variable name and
-    CF standard name."""
+    """The variable map is a dict that maps data type id to variable name"""
     with open(file_path, "r") as f:
         id2var = yaml.safe_load(f)
 
@@ -18,7 +17,8 @@ def load_var_mapping(file_path:str="variable_mapping.yml") -> tuple:
 
 
 def generate_index_mapping(id2var:dict, ids:list) -> dict:
-    """Generate mapping from variable name data list index from available IDs"""
+    """This function generates a dictionary mapping from variable name to data
+    list index using available data type ids"""
     var2idx = {id2var[id]:idx for idx, id in enumerate(ids)}
     idx2var = {var2idx[var]:var for var in var2idx}
     return var2idx, idx2var
