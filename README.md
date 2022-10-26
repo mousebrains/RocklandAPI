@@ -13,3 +13,14 @@ To list existing projects use:
 `./Rockland.py --debug project list`
 
 This code has only been tested on a MacOS system, so far. Jesse found that this works with python 3.10 but not 3.8.
+
+## conda environment
+
+The API requires some non-standard python packages, such as `requests`. These can be installed into a conda environment using:
+`conda env create -f environment.yml`
+
+To use the API, activate the environment with,
+`conda activate rapi`
+
+Then the commands above should work, e.g.
+`./Rockland.py --debug project list`
