@@ -681,7 +681,7 @@ class Download:
             (token, profiles) = prj.profiles(args.project)
             if not token: return
             params = {
-                    "projectToken": token, 
+                    "projectToken": token,
                     # "DataTpeIds": [0x100, 0x110],
                     "profileTokens": [],
                     }
@@ -718,6 +718,13 @@ class Download:
             if info is None: return
             logging.info("INFO\n%s", json.dumps(info, sort_keys=True, indent=4))
 
+            # Jesse's debugging... to be deleted
+            # with open("hdrs.json", "w") as f:
+            #     f.write(json.dumps(hdrs, sort_keys=True, indent=4))
+            # with open("params.json", "w") as f:
+            #     f.write(json.dumps(params, sort_keys=True, indent=4))
+            with open("info.json", "w") as f:
+                f.write(json.dumps(info, sort_keys=True, indent=4))
 
 
     @staticmethod

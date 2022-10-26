@@ -1,0 +1,44 @@
+# This file contains the mapping from variable name to CF standard name
+# Not all variables have a standard name (we might delete those in the future)
+# In the future we could add units or unit conversions and long names as well
+
+time : "time"
+Ax : ""
+Ay : ""
+Az : ""
+Px : ""
+Py : ""
+IX : ""
+IY : ""
+IT : ""
+Theta : ""
+Mx : ""
+My : ""
+Mz : ""
+p : "sea_water_pressure"  # <-- is that really what this is??
+battery_voltage : ""
+pressure_voltage : ""
+EM_current : ""
+lat : "latitude"
+lon : "longitude"
+z : "height"  # <--- CHECK THIS IS REALLY HEIGHT AND NOT DEPTH!
+fall_rate : ""
+speed : ""
+t : "sea_water_temperature"
+C : "sea_water_conductivity"
+viscosity : ""
+sh1 : ""
+sh2 : ""
+kmax_u1 : ""
+kmax_u2 : ""
+var_u1 : ""
+var_u2 : ""
+FoM1 : ""  # Figure of merit
+FoM2 : ""
+freq : ""
+Ssh1 : ""  # Shear spectra
+Ssh2 : ""
+ST1 : ""  # Temperature spectra
+ST2 : ""
+eps1 : "specific_turbulent_kinetic_energy_dissipation_in_sea_water"
+eps2 : "specific_turbulent_kinetic_energy_dissipation_in_sea_water"
