@@ -492,6 +492,18 @@ class Projects:
 
 class ProjectEdit:
     def __init__(self, args:ArgumentParser) -> None:
+        payload =  {}
+        if args.name: payload["name"] = args.name
+        if args.description: payload["description"] = args.description
+        if args.instrument:
+            payload["Instruments"] = []
+            for sn in args.instrument:
+                payload["Instruments"].append({"InstrumentSN": f"SN{sn}"})
+
+        if not payload:
+            logging.warning("Nothing to edit for %s", args.project)
+            return
+
         config = Config(args) # Where config files are located
         login = Login(args) # Get username/password information
         url = RAPI.mkURL(args, args.projectEdit)
@@ -499,16 +511,7 @@ class ProjectEdit:
             projectToken = Projects(args, s).token(args.project)
             if not projectToken: return
             hdrs = RAPI.mkHeaders(login.token(s))
-            payload = { "Name": args.project, "projectToken": projectToken, }
-            if args.description:
-                payload["Description"] = args.description
-            if args.add:
-                payload["Instruments"] = []
-                for sn in args.add:
-                    payload["Instruments"].append({"InstrumentSN": f"SN{sn}"})
-            if args.delete:
-                logging.warning("--delete not yet implemented!")
-                sys.exit(1)
+            payload["token"] = projectToken
             logging.debug("HEADERS\n%s", json.dumps(hdrs, sort_keys=True, indent=4))
             logging.debug("PAYLOAD\n%s", json.dumps(payload, sort_keys=True, indent=4))
             req = s.post(url, headers=hdrs, json=payload)
@@ -534,21 +537,10 @@ class ProjectEdit:
     @staticmethod
     def addArgs(parser:ArgumentParser) -> None:
         parser.add_argument("project", type=str, help="Project name to create")
-        parser.add_argument("description", type=str, help="Project description")
-        parser.add_argument("sn", type=int, nargs="+", help="Instrument serial numbers")
-
-class ProjectEdit:
-    def __init__(self, args:ArgumentParser) -> None:
-        self.__args = args
-
-    @staticmethod
-    def addArgs(parser:ArgumentParser) -> None:
-        parser.add_argument("project", type=str, help="Project name to edit")
+        parser.add_argument("--name", type=str, help="New project name")
         parser.add_argument("--description", type=str, help="Project description")
-        parser.add_argument("--add", type=int, action="append",
-                            help="Instrument serial numbers append")
-        parser.add_argument("--delete", type=int, action="append",
-                            help="Instrument serial numbers to remove")
+        parser.add_argument("--instrument", type=int, action="append",
+                            help="Instrument serial number(s) assigned to the project")
 
 class ProjectDelete:
     def __init__(self, args:ArgumentParser) -> None:
