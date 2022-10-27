@@ -1,0 +1,75 @@
+# This file contains the mapping from hexidecimal number type id to variable names.
+
+##### Kinematics sensors
+# Time 0x100
+0x100: time
+# Accelerometer 0x110 (Ax +1, Ay +2, Az +3)
+0x111: Ax
+0x112: Ay
+0x113: Az
+# Piezo 0x120 (Ax +1, Ay +2)
+0x121: Px
+0x122: Py
+# Inclinometer 0x130 (X +1, Y +2, T +3)
+0x131: IX
+0x132: IY
+0x133: IT
+# Theta (what is this?) 0x140
+0x140: Theta
+# Magnetometer 0x150 (Mx +1, My +2, Mz +3)
+0x151: Mx
+0x152: My
+0x153: Mz
+# Pressure 0x160 (P +1)
+0x160: p
+#### Instrument metadata
+# Battery voltage 0x210
+0x210: battery_voltage
+# Pressure voltage 0x220
+0x220: pressure_voltage
+# EM current 0x230
+0x230: EM_current
+# Position 0x240 (Lat +1, long +2, Z +3)
+0x241: lat
+0x242: lon
+0x243: z
+##### Instrument speed
+0x330: fall_rate
+0x360: speed
+# Todo
+##### CT sensor data
+0x410: t
+0x420: C
+0x450: viscosity
+# Todo
+##### Chlorophyll, turbidity and dissolved oxygen sensors
+# Todo
+##### Microstructure sensors
+0x621: sh1
+0x622: sh2
+# Todo
+##### Unknown
+0x741: despike_frac_sh1
+0x742: despike_frac_sh2
+0x751: despike_num_sh1
+0x752: despike_num_sh2
+##### Shear quality control
+0x811: kmax_u1
+0x812: kmax_u2
+0x821: var_u1
+0x822: var_u2
+0x841: FoM1
+0x842: FoM2
+#### Spectral data
+0x910: freq
+0x921: Ssh1
+0x922: Ssh2
+0x941: ST1
+0x942: ST2
+# Todo
+##### Computed values
+# Todo
+##### Dissipation 0xA10 (ε1...ε15 → +1...0xF)
+0xa11: eps1
+0xa12: eps2
+# Todo
