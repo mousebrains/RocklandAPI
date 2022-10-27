@@ -49,10 +49,10 @@
 0x622: sh2
 # Todo
 ##### Unknown
-0x741: unknown1
-0x742: unknown2
-0x751: unknown3
-0x752: unknown4
+0x741: despike_frac_sh1
+0x742: despike_frac_sh2
+0x751: despike_num_sh1
+0x752: despike_num_sh2
 ##### Shear quality control
 0x811: kmax_u1
 0x812: kmax_u2
