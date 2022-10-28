@@ -20,6 +20,9 @@ from codecs import encode
 from tempfile import NamedTemporaryFile
 import os
 import sys
+from pathlib import Path
+
+import convert_data as conv
 
 # This is from TPWUtils/Logger.py
 #
@@ -674,7 +677,7 @@ class Download:
             if not token: return
             params = {
                     "projectToken": token,
-                    # "DataTpeIds": [0x100, 0x110],
+                    # "DataTypeIds": [0x100, 0x110],
                     "profileTokens": [],
                     }
             for key in profiles:
@@ -683,7 +686,8 @@ class Download:
                 params["profileTokens"].append(profile["token"])
 
             params["profileTokens"] = ",".join(params["profileTokens"])
-            # params["DataTpeIds"] = ",".join(map(hex, params["DataTpeIds"]))
+
+            # params["DataTpeIds"] = ",".join(map(hex, params["DataTypeIds"]))
 
             hdrs = RAPI.mkHeaders(login.token(s))
             logging.info("Headers\n%s", json.dumps(hdrs, sort_keys=True, indent=4))
@@ -708,15 +712,19 @@ class Download:
             # logging.info("url %s", req.url)
             info = RAPI.checkResponse(req)
             if info is None: return
-            logging.info("INFO\n%s", json.dumps(info, sort_keys=True, indent=4))
+            # logging.info("INFO\n%s", json.dumps(info, sort_keys=True, indent=4))
 
-            # Jesse's debugging... to be deleted
-            # with open("hdrs.json", "w") as f:
-            #     f.write(json.dumps(hdrs, sort_keys=True, indent=4))
-            # with open("params.json", "w") as f:
-            #     f.write(json.dumps(params, sort_keys=True, indent=4))
-            with open("info.json", "w") as f:
-                f.write(json.dumps(info, sort_keys=True, indent=4))
+            save_dir = Path(args.directory)
+            if not save_dir.exists():
+                save_dir.mkdir(parents=True)
+
+            filename = profile["name"]
+
+            ds = conv.profile_to_xrDataset(info["body"][0])
+            ds.to_netcdf(Path(save_dir, filename + ".nc"))
+
+            # with open("info.json", "w") as f:
+            #     f.write(json.dumps(info, sort_keys=True, indent=4))
 
 
     @staticmethod

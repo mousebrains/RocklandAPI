@@ -40,9 +40,6 @@ def profile_to_xrDataset(json_body:dict) -> xr.Dataset:
 
     id2var, var2id = load_var_mapping()
 
-    # for el in json_body["typeIds"]:
-    #     print(hex(el))
-
     var2idx, idx2var = generate_index_mapping(id2var, json_body["typeIds"])
     n_vars, n_depths = extract_profile_dimensions(json_body, var2idx)
 
