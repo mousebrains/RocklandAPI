@@ -716,12 +716,12 @@ class Download:
 
             save_dir = Path(args.directory)
             if not save_dir.exists():
-                logging.info("Creating output directory: %s", save_dir)
+                logging.info("Creating output directory %s", save_dir)
                 save_dir.mkdir(parents=True)
 
             filename = profile["name"]
             nc_path = Path(save_dir, filename + ".nc")
-            logging.info("Saving profile to: %s", nc_path)
+            logging.info("Saving profile to %s", nc_path)
 
             ds = conv.profile_to_xrDataset(info["body"][0])
             ds.to_netcdf()

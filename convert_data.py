@@ -3,6 +3,7 @@
 import json
 import xarray as xr
 import yaml
+import logging
 
 
 def load_var_mapping(file_path:str="variable_mapping.yml") -> tuple:
@@ -42,6 +43,10 @@ def profile_to_xrDataset(json_body:dict) -> xr.Dataset:
 
     var2idx, idx2var = generate_index_mapping(id2var, json_body["typeIds"])
     n_vars, n_depths = extract_profile_dimensions(json_body, var2idx)
+
+    logging.info("variables %s", {hex(var2id[key]):key for key in var2idx})
+    logging.info("n_vars %i", n_vars)
+    logging.info("n_depths %i", n_depths)
 
     data_vars = {
         "p": (["profile", "depth_level"], data[var2idx["p"]]),
