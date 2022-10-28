@@ -17,7 +17,7 @@ def load_var_mapping(file_path:str="variable_mapping.yml") -> tuple:
     return id2var, var2id
 
 
-def generate_index_mapping(id2var:dict, ids:list) -> dict:
+def generate_index_mapping(id2var:dict, ids:list) -> tuple:
     """This function generates a dictionary mapping from variable name to data
     list index using available data type ids"""
     var2idx = {id2var[id]:idx for idx, id in enumerate(ids)}
@@ -49,11 +49,15 @@ def profile_to_xrDataset(json_body:dict) -> xr.Dataset:
     logging.info("n_depths %i", n_depths)
 
     data_vars = {
-        "p": (["profile", "depth_level"], data[var2idx["p"]]),
-        "eps1": (["profile", "depth_level"], data[var2idx["eps1"]])
+        "p": (["profile", "time"], data[var2idx["p"]]),
+        "eps1": (["profile", "time"], data[var2idx["eps1"]])
     }
 
-    return xr.Dataset(data_vars)
+    coords = {
+        "time": ("time", data[var2idx["time"]][0], {"units": "seconds since 1970-01-01"})
+    }
+
+    return xr.Dataset(data_vars, coords)
 
 
 if __name__ == "__main__":

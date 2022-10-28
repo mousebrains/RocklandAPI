@@ -675,19 +675,23 @@ class Download:
             prj = Projects(args, s)
             (token, profiles) = prj.profiles(args.project)
             if not token: return
+
+            id2var, _ = conv.load_var_mapping()
+            all_ids = [str(key) for key in id2var]
+
             params = {
                     "projectToken": token,
-                    # "DataTypeIds": [0x100, 0x110],
+                    "DataTypeIds": all_ids,  # Need to be strings!
                     "profileTokens": [],
                     }
+
             for key in profiles:
                 profile = profiles[key]
                 logging.info("profile %s", profile)
                 params["profileTokens"].append(profile["token"])
 
             params["profileTokens"] = ",".join(params["profileTokens"])
-
-            # params["DataTpeIds"] = ",".join(map(hex, params["DataTypeIds"]))
+            params["DataTypeIds"] = ",".join(params["DataTypeIds"])
 
             hdrs = RAPI.mkHeaders(login.token(s))
             logging.info("Headers\n%s", json.dumps(hdrs, sort_keys=True, indent=4))
@@ -712,7 +716,7 @@ class Download:
             # logging.info("url %s", req.url)
             info = RAPI.checkResponse(req)
             if info is None: return
-            # logging.info("INFO\n%s", json.dumps(info, sort_keys=True, indent=4))
+            logging.info("INFO\n%s", json.dumps(info, sort_keys=True, indent=4))
 
             with open("info.json", "w") as f: ### <<--- for debugging purpose, delete eventually
                 f.write(json.dumps(info, sort_keys=True, indent=4))
