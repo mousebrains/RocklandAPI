@@ -48,6 +48,7 @@ def loggerAddArgs(parser:ArgumentParser) -> None:
     gg.add_argument("--debug", action="store_true", help="Enable very verbose logging")
     gg.add_argument("--verbose", action="store_true", help="Enable verbose logging")
 
+
 def mkLogger(args:ArgumentParser,
         fmt:str="%(asctime)s %(threadName)s %(levelname)s: %(message)s",
         name:str=None,
@@ -676,7 +677,7 @@ class Download:
             (token, profiles) = prj.profiles(args.project)
             if not token: return
 
-            id2var, _ = conv.load_var_mapping()
+            _, id2var = conv.load_variable_info()
             all_ids = [str(key) for key in id2var]
 
             params = {
@@ -718,8 +719,8 @@ class Download:
             if info is None: return
             logging.info("INFO\n%s", json.dumps(info, sort_keys=True, indent=4))
 
-            with open("info.json", "w") as f: ### <<--- for debugging purpose, delete eventually
-                f.write(json.dumps(info, sort_keys=True, indent=4))
+            # with open("info.json", "w") as f: ### <<--- for debugging purpose, delete eventually
+            #     f.write(json.dumps(info, sort_keys=True, indent=4))
 
             save_dir = Path(args.directory)
             if not save_dir.exists():

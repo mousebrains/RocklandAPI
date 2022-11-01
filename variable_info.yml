@@ -1,0 +1,215 @@
+# This file contains the mapping from variable name Rockland's hex type ID as
+# well as a CF variable attributes, a dimension and method of expansion
+# for similar variables that span a large range of type ids.
+#
+# Example
+#
+# A:                        <-- variable name, must be unique!!
+#   typeID: [0x111, 0x113]  <-- Hex value of type ID, either a single value e.g. 0x100 or a
+#                               range as a list e.g. [0x100, 0x105]
+#   standard_name: ""       <-- CF standard name
+#   long_name: "A"          <-- CF long name
+#   units: "m s-2"          <-- CF units
+#   expand: "xyz"           <-- if variable spans a range of IDs, the variable will be expanded in
+#                               the code. This parameter determines whether the expansion appends a
+#                               letter xyz or a number 1234...
+#   dims: "time"            <-- netcdf dimension, as a single value e.g. "time" or a list e.g. ["time", "freq"]
+#                               If the dims value matches the variable name it is considered a coordinate
+
+time:
+  typeID: 0x100
+  standard_name: "time"
+  long_name: "Time"
+  units: "seconds since 1970-01-01"
+  dims: "time"
+A:  # Accelerometer 0x110 (Ax +1, Ay +2, Az +3)
+  typeID: [0x111, 0x113]
+  standard_name: ""
+  long_name: "A"
+  units: "m s-2"
+  expand: "xyz"
+  dims: "time"
+P:  # Piezo 0x120 (Ax +1, Ay +2)
+  typeID: [0x121, 0x122]
+  standard_name: ""
+  long_name: "P"
+  units: ""
+  expand: "xyz"
+  dims: "time"
+I:  # Inclinometer 0x130 (X +1, Y +2, T +3)
+  typeID: [0x131, 0x133]
+  standard_name: ""
+  long_name: "I"
+  units: ""
+  expand: "xyz"
+  dims: "time"
+Theta:  # what is this?
+  typeID: 0x140
+  standard_name: ""
+  long_name: ""
+  units: ""
+  dims: "time"
+M:  # Magnetometer 0x150 (Mx +1, My +2, Mz +3)
+  typeID: [0x151, 0x153]
+  standard_name: ""
+  long_name: ""
+  units: ""
+  expand: "xyz"
+  dims: "time"
+p:
+  typeID: 0x160
+  standard_name: "sea_water_pressure"
+  long_name: "Pressure"
+  units: "dbar"
+  dims: "time"
+#### Instrument metadata
+battery_voltage:
+  typeID: 0x210
+  standard_name: ""
+  long_name: ""
+  units: ""
+  dims: "time"
+pressure_voltage:
+  typeID: 0x220
+  standard_name: ""
+  long_name: ""
+  units: ""
+  dims: "time"
+EM_current:
+  typeID: 0x230
+  standard_name: ""
+  long_name: ""
+  units: ""
+  dims: "time"
+# Position 0x240 (Lat +1, long +2, Z +3)
+lat:
+  typeID: 0x241
+  standard_name: "latitude"
+  long_name: "Latitude"
+  units: "degree_north"
+  dims: "time"
+lon:
+  typeID: 0x242
+  standard_name: "longitude"
+  long_name: "Longitude"
+  units: "degree_east"
+  dims: "time"
+z: # <--- CHECK THIS IS REALLY HEIGHT AND NOT DEPTH!
+  typeID: 0x243
+  standard_name: "height"
+  long_name: "Height"
+  units: "m"
+  positive: "up"
+  dims: "time"
+##### Instrument speed
+fall_rate:
+  typeID: 0x330
+  standard_name: ""
+  long_name: "Fall rate"
+  units: "m s-1"
+  dims: "time"
+speed:
+  typeID: 0x360
+  standard_name: "platform_speed_wrt_sea_water"  # (Check!)
+  long_name: "Speed"
+  units: "m s-1"
+  dims: "time"
+##### CT sensor data
+t:
+  typeID: 0x410
+  standard_name: "sea_water_temperature"
+  long_name: "Temperature"
+  units: "degree_C"
+  dims: "time"
+C:
+  typeID: 0x420
+  standard_name: "sea_water_conductivity"
+  long_name: "Conductivity"
+  units: "S m-1"
+  dims: "time"
+mu:
+  typeID: 0x450
+  standard_name: ""
+  long_name: "Viscosity"
+  units: "m2 s-1"
+  dims: "time"
+##### Microstructure sensors
+sh:
+  typeID: [0x611, 0x61f]
+  standard_name: ""
+  long_name: "Shear"
+  units: "s-1"
+  expand: "123"
+  dims: "time"
+tf:
+  typeID: [0x621, 0x62f]
+  standard_name: ""
+  long_name: "Fast t"
+  units: "degree_C"
+  expand: "123"
+  dims: "time"
+##### Shear quality control
+df:
+  typeID: [0x741, 0x74f]
+  standard_name: ""
+  long_name: "Despike fraction"
+  units: ""
+  expand: "123"
+  dims: "time"
+dn:
+  typeID: [0x751, 0x75f]
+  standard_name: ""
+  long_name: "Despike number"
+  units: ""
+  expand: "123"
+  dims: "time"
+kmax_u:  # What is this?
+  typeID: [0x811, 0x81f]
+  standard_name: ""
+  long_name: "Kmax"
+  units: ""
+  expand: "123"
+  dims: "time"
+var_u:  # What is this?
+  typeID: [0x821, 0x82f]
+  standard_name: ""
+  long_name: "var_u"
+  units: ""
+  expand: "123"
+  dims: "time"
+FoM:  # Figure of merit
+  typeID: [0x841, 0x84f]
+  standard_name: ""
+  long_name: "Figure of merit"
+  units: ""
+  expand: "123"
+  dims: "time"
+#### Spectral data
+freqs:
+  typeID: 0x910
+  standard_name: ""
+  long_name: "Frequency"
+  units: ""
+  dims: "freq"
+Ssh:  # Shear spectra
+  typeID: [0x921, 0x92f]
+  standard_name: ""
+  long_name: "Shear spectrum"
+  units: ""
+  expand: "123"
+  dims: ["time", "freq"]
+ST:  # Temperature spectra
+  typeID: [0x941, 0x94f]
+  standard_name: ""
+  long_name: "Shear spectrum"
+  units: ""
+  expand: "123"
+  dims: ["time", "freq"]
+##### Computed values
+eps:
+  typeID: [0xa11, 0xa1f]
+  standard_name: "specific_turbulent_kinetic_energy_dissipation_in_sea_water"
+  long_name: "Epsilon"
+  units: ""
+  expand: "123"
+  dims: "time"
