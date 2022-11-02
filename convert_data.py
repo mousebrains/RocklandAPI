@@ -81,12 +81,12 @@ def parse_NaN(dat:list) -> list:
     return out
 
 
-def profile_to_xrDataset(json_body:dict) -> xr.Dataset:
+def profile_to_xrDataset(json_body:dict, file_path:str="variable_info.yml") -> xr.Dataset:
     """"""
     CF_attributes = ["long_name", "standard_name", "units"]
     data = json_body["data"]
 
-    var_info, id2var = load_variable_info()
+    var_info, id2var = load_variable_info(file_path)
 
     var2idx = generate_index_mapping(id2var, json_body["typeIds"])
     n_vars, n_times = extract_profile_dimensions(json_body, var2idx)

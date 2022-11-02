@@ -677,7 +677,7 @@ class Download:
             (token, profiles) = prj.profiles(args.project)
             if not token: return
 
-            _, id2var = conv.load_variable_info()
+            _, id2var = conv.load_variable_info(args.metadata_file)
             all_ids = [str(key) for key in id2var]
 
             params = {
@@ -733,7 +733,7 @@ class Download:
                 nc_path = Path(save_dir, filename + ".nc")
                 logging.info("Saving profile to %s", nc_path)
 
-                ds = conv.profile_to_xrDataset(info["body"][i])
+                ds = conv.profile_to_xrDataset(info["body"][i], args.metadata_file)
                 ds.to_netcdf(nc_path)
 
 
@@ -742,6 +742,8 @@ class Download:
         parser.add_argument("project", type=str, help="Project name to store data for")
         parser.add_argument("--directory", type=str, default="result",
                             help="Where to save downloaded files to")
+        parser.add_argument("--metadata-file", type=str, default="variable_info.yml",
+                            help="File specifying variable names, type IDs, and netCDF metadata")
 
 def main():
     parser = ArgumentParser(description="Rockland Cloud API")
