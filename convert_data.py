@@ -4,6 +4,7 @@ import json
 import xarray as xr
 import yaml
 import logging
+import numpy as np
 
 
 def load_variable_info(file_path:str="variable_info.yml") -> tuple:
@@ -19,7 +20,7 @@ def load_variable_info(file_path:str="variable_info.yml") -> tuple:
     return var_info, id2var  #, var2id
 
 
-def expand_variables(var_info:dict) -> dict:
+def expand_variables(var_info:dict) -> None:
     """Some variables cover a wide range of type IDs denoted as a list in the
     yaml file. This function modifies the dictionary in place."""
 
@@ -67,6 +68,19 @@ def extract_profile_dimensions(json_body:dict, var2idx:dict) -> tuple:
     return n_vars, n_times
 
 
+def parse_NaN(dat:list) -> list:
+    """Recusively replace "NaN" values with numpy.NaN objects"""
+    out = []
+    for el in dat:
+        if type(el) is list:
+            out.append(parse_NaN(el))
+        elif el == "NaN":
+            out.append(np.NaN)
+        else:
+            out.append(el)
+    return out
+
+
 def profile_to_xrDataset(json_body:dict) -> xr.Dataset:
     """"""
     CF_attributes = ["long_name", "standard_name", "units"]
@@ -81,26 +95,26 @@ def profile_to_xrDataset(json_body:dict) -> xr.Dataset:
     logging.info("n_vars %i", n_vars)
     logging.info("n_times %i", n_times)
 
-    # Reduce info to only the downloaded variables
+    # Reduce info to only the downloaded variables and sort them
     var_info = {key:var_info[key] for key in var2idx}
     logging.info("var_info\n%s", var_info)
 
     # Find coordinate and data variables. Coordinate variable names match their dimension name.
     coord_keys = [key for key in var_info if key == var_info[key]["dims"]]
-    data_keys = list(set(var_info.keys()) - set(coord_keys))
+    data_keys = sorted(list(set(var_info.keys()) - set(coord_keys)))
 
     # Generate coordinates
     coords = {}
     for key in coord_keys:
+        logging.info("creating coord %s", key)
         info = var_info[key]
         attrs = {at:info[at] for at in CF_attributes}
         coords[key] = (info["dims"], data[var2idx[key]][0], attrs)
 
-    logging.info("coords\n%s", coords)
-
     # Generate data variables
     data_vars = {}
     for key in data_keys:
+        logging.info("creating data_var %s", key)
         info = var_info[key]
         attrs = {at:info[at] for at in CF_attributes}
 
@@ -109,10 +123,11 @@ def profile_to_xrDataset(json_body:dict) -> xr.Dataset:
         else:
             dat = data[var2idx[key]][0]
 
+        dat = parse_NaN(dat)
+
         data_vars[key] = (info["dims"], dat, attrs)
 
-    logging.info("data_vars\n%s", data_vars)
-
+    logging.info("returning xarray.Dataset")
     return xr.Dataset(data_vars, coords)
 
 

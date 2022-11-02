@@ -131,7 +131,7 @@ mu:
   typeID: 0x450
   standard_name: ""
   long_name: "Viscosity"
-  units: "m2 s-1"
+  units: ""
   dims: "time"
 ##### Microstructure sensors
 sh:
@@ -190,7 +190,7 @@ freqs:
   standard_name: ""
   long_name: "Frequency"
   units: ""
-  dims: "freq"
+  dims: ["time", "freq"]
 Ssh:  # Shear spectra
   typeID: [0x921, 0x92f]
   standard_name: ""
@@ -201,7 +201,7 @@ Ssh:  # Shear spectra
 ST:  # Temperature spectra
   typeID: [0x941, 0x94f]
   standard_name: ""
-  long_name: "Shear spectrum"
+  long_name: "Temperature spectrum"
   units: ""
   expand: "123"
   dims: ["time", "freq"]
@@ -210,6 +210,6 @@ eps:
   typeID: [0xa11, 0xa1f]
   standard_name: "specific_turbulent_kinetic_energy_dissipation_in_sea_water"
   long_name: "Epsilon"
-  units: ""
+  units: "W kg-1"
   expand: "123"
   dims: "time"
