@@ -401,9 +401,13 @@ class ProjectList:
             return None
         items = {}
         for item in body:
-            items[item["name"]] = item
+            project_name = item["name"]
+            items[project_name] = item
             logging.info("Project %s", json.dumps(item, sort_keys=True, indent=4))
-            config.saveProject(item["name"], item)
+            config.saveProject(project_name, item)
+
+            print(project_name)
+
         return items
 
 class ProjectProfiles:
