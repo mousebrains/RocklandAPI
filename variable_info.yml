@@ -143,7 +143,7 @@ sh:
   dims: "time"
 tf:
   typeID: [0x621, 0x62f]
-  standard_name: ""
+  standard_name: "sea_water_temperature"
   long_name: "Fast t"
   units: "degree_C"
   expand: "123"

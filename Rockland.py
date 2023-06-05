@@ -6,87 +6,18 @@
 
 from argparse import ArgumentParser
 import logging
-import logging.handlers
-import socket
-import getpass
 import yaml
 import json
 import datetime
-import time
 import re
 import math
 from requests import Session
-from codecs import encode
 from tempfile import NamedTemporaryFile
-import os
-import sys
 from pathlib import Path
 
-import convert_data as conv
+import convert as conv
+from loggers import mkLogger, loggerAddArgs, logRequest
 
-# This is from TPWUtils/Logger.py
-#
-# Set up logging to rolling files and/or SMTP
-#
-def loggerAddArgs(parser:ArgumentParser) -> None:
-    ''' Add command line arguments I will use '''
-    grp = parser.add_argument_group("Logger Related Options")
-    grp.add_argument("--logfile", type=str, metavar="filename", help="Name of logfile")
-    grp.add_argument("--logBytes", type=int, default=10000000, metavar="length",
-            help="Maximum logfile size in bytes")
-    grp.add_argument("--logCount", type=int, default=3, metavar="count",
-            help="Number of backup files to keep")
-    grp.add_argument("--mailTo", action="append", metavar="foo@bar.com",
-            help="Where to mail errors and exceptions to")
-    grp.add_argument("--mailFrom", type=str, metavar="foo@bar.com",
-            help="Who the mail originates from")
-    grp.add_argument("--mailSubject", type=str, metavar="subject",
-            help="Mail subject line")
-    grp.add_argument("--smtpHost", type=str, default="localhost", metavar="foo.bar.com",
-            help="SMTP server to mail to")
-    gg = grp.add_mutually_exclusive_group()
-    gg.add_argument("--debug", action="store_true", help="Enable very verbose logging")
-    gg.add_argument("--verbose", action="store_true", help="Enable verbose logging")
-
-
-def mkLogger(args:ArgumentParser,
-        fmt:str="%(asctime)s %(threadName)s %(levelname)s: %(message)s",
-        name:str=None,
-        logLevel:str="WARNING") -> logging.Logger:
-    ''' Construct a logger and return it '''
-    logger = logging.getLogger(name) # If name is None, then root logger
-    logger.handlers.clear() # Clear any pre-existing handlers for name
-
-    if args.logfile:
-        ch = logging.handlers.RotatingFileHandler(args.logfile,
-                maxBytes=args.logBytes,
-                backupCount=args.logCount)
-    else:
-        ch = logging.StreamHandler()
-
-    logLevel = \
-            logging.DEBUG if args.debug else \
-            logging.INFO if args.verbose else \
-            logLevel
-    logger.setLevel(logLevel)
-    ch.setLevel(logLevel)
-
-    formatter = logging.Formatter(fmt)
-    ch.setFormatter(formatter)
-
-    logger.addHandler(ch)
-
-    if args.mailTo is not None:
-        frm = args.mailFrom if args.mailFrom is not None else \
-                (getpass.getuser() + "@" + socket.getfqdn())
-        subj = args.mailSubject if args.mailSubject is not None else \
-                ("Error on " + socket.getfqdn())
-
-        ch = logging.handlers.SMTPHandler(args.smtpHost, frm, args.mailTo, subj)
-        ch.setLevel(logging.ERROR)
-        ch.setFormatter(formatter)
-        logger.addHandler(ch)
-    return logger
 
 class Config:
     __argsInitialized = False
@@ -102,8 +33,8 @@ class Config:
             cls.__argsInitialized = True
         return parser
 
-    def __mkfn(self, fn:str) -> str:
-        return os.path.abspath(os.path.expanduser(os.path.join(self.__directory, fn + ".yaml")))
+    def __mkfn(self, fn:str) -> Path:
+        return Path(self.__directory, fn + ".yaml").expanduser().absolute() 
 
     def loadProject(self, project:str) -> dict:
         return self.load("project." + project)
@@ -116,35 +47,41 @@ class Config:
 
     def saveProfiles(self, project:str, info) -> dict:
         return self.save("profiles." + project, info)
+    
+    def loadHistory(self, project:str) -> dict:
+        return self.load("history." + project)
+
+    def saveHistory(self, project:str, info) -> dict:
+        return self.save("history." + project, info)
 
     def unlinkProject(self, project:str) -> None:
         fn = self.__mkfn("project." + project)
-        if os.path.isfile(fn):
+        if fn.is_file():
             logging.info("Removing %s", fn)
-            os.unlink(fn)
+            fn.unlink()
 
     def save(self, fn:str, info) -> dict:
         fn = self.__mkfn(fn)
-        dirname = os.path.dirname(fn)
+        dirname = fn.parent
 
-        if not os.path.isdir(dirname):
+        if not dirname.exists():
             logging.info("Creating %s", dirname)
-            os.makedirs(dirname, exist_ok=True) # exist_ok for race conditions
-            os.chmod(dirname, 0o700) # Make readable only by this user
+            fn.mkdir(parents=True, exist_ok=True) # exist_ok for race conditions
+            fn.chmod(0o700) # Make readable only by this user
 
         tfn = None
         try:
             # Use a temporary file so we'll do an atomic file operation in the move later
             with NamedTemporaryFile(mode="w", dir=dirname, delete=False) as fp:
-                tfn = fp.name
+                tfn = Path(fp.name)
                 fp.write("# Created ")
                 fp.write("{}".format(datetime.datetime.now()))
                 fp.write("\n")
                 fp.write(json.dumps(info, sort_keys=True, indent=4))
-            os.rename(tfn, fn) # An atomic rename within same file system
+            tfn.rename(fn) # An atomic rename within same file system
         except:
             logging.exception("Unable to write to %s", fn)
-            if tfn: os.unlink(tfn)
+            if tfn: tfn.unlink()
 
         return info
 
@@ -330,6 +267,7 @@ class Login:
             "token": self.__token,
             "expiry": self.__expiry.isoformat()})
         return self.__token
+    
 
 class ProjectCreate:
     def __init__(self, args:ArgumentParser) -> None:
@@ -388,6 +326,7 @@ class ProjectList:
         token = login.token(s)
         hdrs = RAPI.mkHeaders(token)
         req = s.get(url, headers=hdrs)
+        logRequest(req)
         info = RAPI.checkResponse(req)
         if info is None: return None
         if "body" not in info:
@@ -433,6 +372,7 @@ class ProjectProfiles:
         payload = {"projectToken": projToken}
         hdrs = RAPI.mkHeaders(token)
         req = s.get(url, headers=hdrs, params=payload)
+        logRequest(req)
         info = RAPI.checkResponse(req)
         if info is None: return None
         if "body" not in info:
@@ -446,6 +386,7 @@ class ProjectProfiles:
             return None
         items = {}
         for item in body:
+            print(item["name"])
             items[item["name"]] = item
             logging.info("Profile %s", json.dumps(item, sort_keys=True, indent=4))
         config.saveProfiles(project, items)
@@ -523,21 +464,7 @@ class ProjectEdit:
             logging.debug("HEADERS\n%s", json.dumps(hdrs, sort_keys=True, indent=4))
             logging.debug("PAYLOAD\n%s", json.dumps(payload, sort_keys=True, indent=4))
             req = s.post(url, headers=hdrs, json=payload)
-            logging.info("COOKIES %s", req.cookies)
-            logging.info("ELAPSED %s", req.elapsed)
-            logging.info("encoding %s", req.encoding)
-            logging.info("headers\n%s", json.dumps(dict(req.headers), sort_keys=True, indent=4))
-            logging.info("history %s", req.history)
-            logging.info("is_permanent_redirect %s", req.is_permanent_redirect)
-            logging.info("is_redirect %s", req.is_redirect)
-            logging.info("links %s", req.links)
-            logging.info("next %s", req.next)
-            logging.info("ok %s", req.ok)
-            logging.info("reason %s", req.reason)
-            logging.info("request %s", req.request)
-            logging.info("status_code %s", req.status_code)
-            logging.info("text %s", req.text)
-            logging.info("url %s", req.url)
+            logRequest(req)
             info = RAPI.checkResponse(req)
             if info is None: return
             logging.info("INFO\n%s", json.dumps(info, sort_keys=True, indent=4))
@@ -629,6 +556,16 @@ class Upload:
                 ]
 
         config = Config(args) # Where config files are located
+
+        hist = config.loadHistory(args.project)
+        if not hist:
+            hist = {}
+
+        file = Path(args.filename)
+        # If file is already uploaded, do not upload again.
+        if file.name in hist:
+            return
+        
         login = Login(args) # Get username/password information
         url = RAPI.mkURL(args, args.profileNew)
 
@@ -644,21 +581,7 @@ class Upload:
             logging.info("%s", files)
             logging.info("url %s", url)
             req = s.post(url, headers=hdrs, files=files)
-            logging.info("COOKIES %s", req.cookies)
-            logging.info("ELAPSED %s", req.elapsed)
-            logging.info("encoding %s", req.encoding)
-            logging.info("headers\n%s", req.headers)
-            logging.info("history %s", req.history)
-            logging.info("is_permanent_redirect %s", req.is_permanent_redirect)
-            logging.info("is_redirect %s", req.is_redirect)
-            logging.info("links %s", req.links)
-            logging.info("next %s", req.next)
-            logging.info("ok %s", req.ok)
-            logging.info("reason %s", req.reason)
-            logging.info("request %s", req.request)
-            logging.info("status_code %s", req.status_code)
-            logging.info("text %s", req.text)
-            logging.info("url %s", req.url)
+            logRequest(req)
             info = RAPI.checkResponse(req)
             if info is None: return
             logging.info("INFO\n%s", json.dumps(info, sort_keys=True, indent=4))
@@ -704,27 +627,14 @@ class Download:
             logging.info("url %s", url)
             # url = "http://unms.mousebrains.com:4444/api/Data/Get"
             req = s.get(url, headers=hdrs, params=params)
-            # logging.info("COOKIES %s", req.cookies)
-            # logging.info("ELAPSED %s", req.elapsed)
-            # logging.info("encoding %s", req.encoding)
-            # logging.info("headers\n%s", req.headers)
-            # logging.info("history %s", req.history)
-            # logging.info("is_permanent_redirect %s", req.is_permanent_redirect)
-            # logging.info("is_redirect %s", req.is_redirect)
-            # logging.info("links %s", req.links)
-            # logging.info("next %s", req.next)
-            # logging.info("ok %s", req.ok)
-            # logging.info("reason %s", req.reason)
-            # logging.info("request %s", req.request)
-            # logging.info("status_code %s", req.status_code)
-            # logging.info("text %s", req.text)
-            # logging.info("url %s", req.url)
+            logRequest(req)
+
             info = RAPI.checkResponse(req)
             if info is None: return
             logging.info("INFO\n%s", json.dumps(info, sort_keys=True, indent=4))
 
-            # with open("info.json", "w") as f: ### <<--- for debugging purpose, delete eventually
-            #     f.write(json.dumps(info, sort_keys=True, indent=4))
+            with open("info.json", "w") as f: ### <<--- for debugging purpose, delete eventually
+                f.write(json.dumps(info, sort_keys=True, indent=4))
 
             save_dir = Path(args.directory)
             if not save_dir.exists():
@@ -739,7 +649,6 @@ class Download:
 
                 ds = conv.profile_to_xrDataset(info["body"][i], args.metadata_file)
                 ds.to_netcdf(nc_path)
-
 
     @staticmethod
     def addArgs(parser:ArgumentParser) -> None:

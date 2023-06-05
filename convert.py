@@ -4,7 +4,6 @@ import json
 import xarray as xr
 import yaml
 import logging
-import numpy as np
 
 
 def load_variable_info(file_path:str="variable_info.yml") -> tuple:
@@ -69,15 +68,13 @@ def extract_profile_dimensions(json_body:dict, var2idx:dict) -> tuple:
 
 
 def parse_NaN(dat:list) -> list:
-    """Recusively replace "NaN" values with numpy.NaN objects"""
+    """Recusively replace "NaN" values with nan floats"""
     out = []
     for el in dat:
         if type(el) is list:
             out.append(parse_NaN(el))
-        elif el == "NaN":
-            out.append(np.NaN)
         else:
-            out.append(el)
+            out.append(float(el))
     return out
 
 
