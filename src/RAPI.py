@@ -1,9 +1,6 @@
 #! /usr/bin/env python3
-#
-# Play with argparse subparsers
-#
 # Oct-2022, Pat Welch, pat@mousebrains.com
-
+# Oct-2022, Jesse Cusack, jesse.cusack@oregonstate.edu
 from argparse import ArgumentParser
 import logging
 import yaml
@@ -347,7 +344,11 @@ class ProjectList:
                             json.dumps(info, sort_keys=True, indent=4))
             return None
         
-        display = args.cmdProject == "list"
+        display = False
+        if hasattr(args, "cmdProject"):
+            if args.cmdProject == "list":
+                display = True
+
         items = {}
         for item in body:
             project_name = item["name"]
@@ -394,10 +395,16 @@ class ProjectProfiles:
             logging.info("No entries returned for ProjectProfiles\n%s",
                             json.dumps(info, sort_keys=True, indent=4))
             return None
+        
+        display = False
+        if hasattr(args, "cmdProject"):
+            if args.cmdProject == "profiles":
+                display = True
+
         items = {}
         for item in body:
-            print(item["name"])
             items[item["name"]] = item
+            if display: print(item["name"])
             logging.info("Profile %s", json.dumps(item, sort_keys=True, indent=4))
         config.saveProfiles(project, items)
         return items
@@ -574,8 +581,9 @@ class Upload:
 
         file = Path(args.filename)
         # If file is already uploaded, do not upload again.
-        if file.name in hist:
-            raise ValueError(f"{file.name} is in the history log.")
+        for token in hist:
+            if hist[token]["mriFile"] == file.name:
+                raise ValueError(f"{file.name} is in the history log.")
         
         login = Login(args) # Get username/password information
         url = RAPI.mkURL(args, args.profileNew)
@@ -597,9 +605,12 @@ class Upload:
             if info is None: return
 
             logging.info("INFO\n%s", json.dumps(info, sort_keys=True, indent=4))
-            hist[file.name] = {}
-            hist[file.name]["ProfileTokens"] = info["body"]
-            hist[file.name]["UploadTime"] = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+            tokens = info["body"]
+            for token in tokens.split(","):
+                hist[token] = {}
+                hist[token]["mriFile"] = file.name.expanduser().absolute()
+                hist[token]["uploadTime"] = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+
             config.saveHistory(args.project, hist)
 
 
@@ -621,6 +632,8 @@ class Download:
             (token, profiles) = prj.profiles(args.project)
             if not token: return
 
+            hist = config.loadHistory(args.project)
+
             _, id2var = conv.load_variable_info(args.metadata_file)
             all_ids = [str(key) for key in id2var]
 
@@ -632,8 +645,20 @@ class Download:
 
             for key in profiles:
                 profile = profiles[key]
+                profileToken = profile["token"]
+                
+                logging.info("uploaded filename %s", hist[profileToken]["mriFile"])
+
+                if profileToken in hist and "downloadTime" in hist[profileToken]:
+                    continue  # Already downloaded
+
                 logging.info("profile %s", profile)
-                params["profileTokens"].append(profile["token"])
+                params["profileTokens"].append(profileToken)
+
+            nProfiles = len(params["profileTokens"])
+            if nProfiles == 0: 
+                print("No new profiles to download.")
+                return None  # Return because no profiles to download
 
             params["profileTokens"] = ",".join(params["profileTokens"])
             params["DataTypeIds"] = ",".join(params["DataTypeIds"])
@@ -650,22 +675,28 @@ class Download:
             if info is None: return
             logging.info("INFO\n%s", json.dumps(info, sort_keys=True, indent=4))
 
-            # with open("info.json", "w") as f: ### <<--- for debugging purpose, delete eventually
-            #     f.write(json.dumps(info, sort_keys=True, indent=4))
-
             save_dir = Path(args.directory)
             if not save_dir.exists():
-                logging.info("Creating output directory %s", save_dir)
                 save_dir.mkdir(parents=True)
 
-            # Loop over and save profiles
-            for i, key in enumerate(profiles):
-                filename = profiles[key]["name"]
-                nc_path = Path(save_dir, filename + ".nc")
-                logging.info("Saving profile to %s", nc_path)
+            logging.info("Output directory %s", save_dir)
 
-                ds = conv.profile_to_xrDataset(info["body"][i], args.metadata_file)
-                ds.to_netcdf(nc_path)
+            # Loop over and save profiles
+            for bod in info["body"]:
+                ds = conv.profile_to_Dataset(bod, args.metadata_file)
+
+                time_start = datetime.datetime.utcfromtimestamp(ds.time.data[0])
+                filename = time_start.strftime("%Y%m%d_%H%M%S")
+
+                ncPath = Path(save_dir, filename + ".nc").expanduser().absolute()
+                logging.info("Saving profile to %s", ncPath)
+                ds.to_netcdf(ncPath)
+
+                # profileToken
+                hist[bod["profileToken"]]["downloadTime"] = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+                hist[bod["profileToken"]]["ncFile"] = str(ncPath)
+                config.saveHistory(args.project, hist)
+
 
     @staticmethod
     def addArgs(parser:ArgumentParser) -> None:

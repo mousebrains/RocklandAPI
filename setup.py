@@ -6,7 +6,7 @@ setup(
     packages=find_packages(),
     entry_points={
         'console_scripts': [
-            'hapi=src.Rockland:main'
+            'hapi=src.RAPI:main'
         ]
     },
     data_files=[("config", ["src/resources/variable_info.yml"])],

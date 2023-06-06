@@ -81,7 +81,7 @@ def parse_NaN(dat:list) -> list:
     return out
 
 
-def profile_to_xrDataset(json_body:dict, file_path:str=None) -> xr.Dataset:
+def profile_to_Dataset(json_body:dict, file_path:str=None) -> xr.Dataset:
     """"""
     CF_attributes = ["long_name", "standard_name", "units"]
     data = json_body["data"]
@@ -130,12 +130,3 @@ def profile_to_xrDataset(json_body:dict, file_path:str=None) -> xr.Dataset:
     logging.info("returning xarray.Dataset")
     return xr.Dataset(data_vars, coords)
 
-
-# if __name__ == "__main__":
-
-#     with open("info.json", "r") as f:
-#         profile = json.load(f)
-
-#     body = profile["body"][0]  # First profile
-
-#     profile_to_xrDataset(body).to_netcdf("test.nc")
