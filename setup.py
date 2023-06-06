@@ -10,4 +10,8 @@ setup(
         ]
     },
     data_files=[("config", ["src/resources/variable_info.yml"])],
+    install_requires=[
+        "xarray",
+        
+    ]
 )
