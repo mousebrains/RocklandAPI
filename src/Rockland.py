@@ -59,6 +59,14 @@ class Config:
         if fn.is_file():
             logging.info("Removing %s", fn)
             fn.unlink()
+        fn = self.__mkfn("profiles." + project)
+        if fn.is_file():
+            logging.info("Removing %s", fn)
+            fn.unlink()
+        fn = self.__mkfn("history." + project)
+        if fn.is_file():
+            logging.info("Removing %s", fn)
+            fn.unlink()
 
     def save(self, fn:str, info) -> dict:
         fn = self.__mkfn(fn)
@@ -300,7 +308,7 @@ class ProjectCreate:
                     "token": info["body"],
                     }
             logging.info("Project\n%s", json.dumps(prj, sort_keys=True, indent=4))
-            config.saveProject(prj["name"], prj)
+            config.saveProject(args.project, prj)
 
     @staticmethod
     def addArgs(parser:ArgumentParser) -> None:
@@ -338,6 +346,8 @@ class ProjectList:
             logging.info("No entries returned for ProjectList\n%s",
                             json.dumps(info, sort_keys=True, indent=4))
             return None
+        
+        display = args.cmdProject == "list"
         items = {}
         for item in body:
             project_name = item["name"]
@@ -345,7 +355,7 @@ class ProjectList:
             logging.info("Project %s", json.dumps(item, sort_keys=True, indent=4))
             config.saveProject(project_name, item)
 
-            print(project_name)
+            if display: print(project_name)
 
         return items
 
@@ -407,6 +417,7 @@ class Projects:
         args = self.__args
         config = Config(args) # For where to load files from
         info = config.loadProject(project)
+
         if info:
             self.__info[project] = info
             return info
@@ -503,7 +514,7 @@ class ProjectDelete:
         req = s.post(url, headers=hdrs, params=payload)
         info = RAPI.checkResponse(req)
         if info is None: return
-        config.unlinkProject(prj["name"])
+        config.unlinkProject(name)
         logging.info("Removed %s", name)
 
 class Project:
@@ -586,7 +597,9 @@ class Upload:
             if info is None: return
 
             logging.info("INFO\n%s", json.dumps(info, sort_keys=True, indent=4))
-            hist[file.name] = info["body"]
+            hist[file.name] = {}
+            hist[file.name]["ProfileTokens"] = info["body"]
+            hist[file.name]["UploadTime"] = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
             config.saveHistory(args.project, hist)
 
 
@@ -662,7 +675,8 @@ class Download:
         parser.add_argument("--metadata-file", type=str, default=None,
                             help="File specifying variable names, type IDs, and netCDF metadata")
 
-def main():
+
+def mkParser() -> ArgumentParser:
     parser = ArgumentParser(description="Rockland Cloud API")
     loggerAddArgs(parser)
     Login.addArgs(parser)
@@ -686,6 +700,11 @@ def main():
                                       aliases=("get",),
                                       description="Download profile(s)",
                                       help="Download profile(s)"))
+    return parser
+
+
+def main():
+    parser = mkParser()
     args = parser.parse_args()
 
     mkLogger(args, fmt="%(asctime)s %(levelname)s: %(message)s")
