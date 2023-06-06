@@ -608,7 +608,7 @@ class Upload:
             tokens = info["body"]
             for token in tokens.split(","):
                 hist[token] = {}
-                hist[token]["mriFile"] = file.name.expanduser().absolute()
+                hist[token]["mriFile"] = str(file.expanduser().absolute())
                 hist[token]["uploadTime"] = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
 
             config.saveHistory(args.project, hist)
