@@ -564,7 +564,7 @@ class Upload:
         file = Path(args.filename)
         # If file is already uploaded, do not upload again.
         if file.name in hist:
-            return
+            raise ValueError(f"{file.name} is in the history log.")
         
         login = Login(args) # Get username/password information
         url = RAPI.mkURL(args, args.profileNew)
@@ -584,7 +584,11 @@ class Upload:
             logRequest(req)
             info = RAPI.checkResponse(req)
             if info is None: return
+
             logging.info("INFO\n%s", json.dumps(info, sort_keys=True, indent=4))
+            hist[file.name] = info["body"]
+            config.saveHistory(args.project, hist)
+
 
     @staticmethod
     def addArgs(parser:ArgumentParser) -> None:
