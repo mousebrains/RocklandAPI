@@ -15,8 +15,8 @@ from requests import Session
 from tempfile import NamedTemporaryFile
 from pathlib import Path
 
-import convert as conv
-from loggers import mkLogger, loggerAddArgs, logRequest
+from . import convert as conv
+from .loggers import mkLogger, loggerAddArgs, logRequest
 
 
 class Config:
@@ -637,8 +637,8 @@ class Download:
             if info is None: return
             logging.info("INFO\n%s", json.dumps(info, sort_keys=True, indent=4))
 
-            with open("info.json", "w") as f: ### <<--- for debugging purpose, delete eventually
-                f.write(json.dumps(info, sort_keys=True, indent=4))
+            # with open("info.json", "w") as f: ### <<--- for debugging purpose, delete eventually
+            #     f.write(json.dumps(info, sort_keys=True, indent=4))
 
             save_dir = Path(args.directory)
             if not save_dir.exists():
@@ -659,7 +659,7 @@ class Download:
         parser.add_argument("project", type=str, help="Project name to store data for")
         parser.add_argument("--directory", type=str, default="result",
                             help="Where to save downloaded files to")
-        parser.add_argument("--metadata-file", type=str, default="variable_info.yml",
+        parser.add_argument("--metadata-file", type=str, default=None,
                             help="File specifying variable names, type IDs, and netCDF metadata")
 
 def main():

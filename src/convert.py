@@ -1,13 +1,16 @@
-#! /usr/bin/env python3
-
+from pkg_resources import resource_filename
 import json
 import xarray as xr
 import yaml
 import logging
 
 
-def load_variable_info(file_path:str="variable_info.yml") -> tuple:
+def load_variable_info(file_path:str=None) -> tuple:
     """Load all variable information and generate some useful mapping dicts"""
+
+    if file_path is None:
+        file_path = resource_filename(__name__, 'resources/variable_info.yml')
+
     with open(file_path, "r") as f:
         var_info = yaml.safe_load(f)
 
@@ -68,7 +71,7 @@ def extract_profile_dimensions(json_body:dict, var2idx:dict) -> tuple:
 
 
 def parse_NaN(dat:list) -> list:
-    """Recusively replace "NaN" values with nan floats"""
+    """Recusively replace "NaN" strings with floats"""
     out = []
     for el in dat:
         if type(el) is list:
@@ -78,7 +81,7 @@ def parse_NaN(dat:list) -> list:
     return out
 
 
-def profile_to_xrDataset(json_body:dict, file_path:str="variable_info.yml") -> xr.Dataset:
+def profile_to_xrDataset(json_body:dict, file_path:str=None) -> xr.Dataset:
     """"""
     CF_attributes = ["long_name", "standard_name", "units"]
     data = json_body["data"]
@@ -128,11 +131,11 @@ def profile_to_xrDataset(json_body:dict, file_path:str="variable_info.yml") -> x
     return xr.Dataset(data_vars, coords)
 
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
-    with open("info.json", "r") as f:
-        profile = json.load(f)
+#     with open("info.json", "r") as f:
+#         profile = json.load(f)
 
-    body = profile["body"][0]  # First profile
+#     body = profile["body"][0]  # First profile
 
-    profile_to_xrDataset(body).to_netcdf("test.nc")
+#     profile_to_xrDataset(body).to_netcdf("test.nc")
