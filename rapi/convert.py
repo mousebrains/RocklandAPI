@@ -1,6 +1,6 @@
 from pkg_resources import resource_filename
-import json
 import xarray as xr
+import numpy as np
 import yaml
 import logging
 
@@ -111,11 +111,15 @@ def profile_to_Dataset(json_body:dict, file_path:str=None) -> xr.Dataset:
         attrs = {at:info[at] for at in CF_attributes}
         coords[key] = (info["dims"], data[var2idx[key]][0], attrs)
 
+    # The second index should be the coord data
+    ntime = np.size(coords["time"][1])
+
     # Generate data variables
     data_vars = {}
     for key in data_keys:
-        logging.info("creating data_var %s", key)
+        logging.info("data variable %s", key)
         info = var_info[key]
+        logging.info("data variable info %s", info)
         attrs = {at:info[at] for at in CF_attributes}
 
         if type(info["dims"]) is list:
@@ -125,7 +129,18 @@ def profile_to_Dataset(json_body:dict, file_path:str=None) -> xr.Dataset:
 
         dat = parse_NaN(dat)
 
-        data_vars[key] = (info["dims"], dat, attrs)
+        # Check the time dimension matches
+        nrow = np.size(dat, axis=0)
+        dim_length_mismatch = nrow != ntime
+        dims = [info["dims"]] if type(info["dims"]) is str else info["dims"]
+        
+        # Rename time if dimensions mismatch
+        if dim_length_mismatch:
+            for i in range(len(dims)):
+                if "time" == dims[i]:
+                    dims[i] = "time1"
+
+        data_vars[key] = (dims, dat, attrs)
 
     logging.info("returning xarray.Dataset")
     return xr.Dataset(data_vars, coords)

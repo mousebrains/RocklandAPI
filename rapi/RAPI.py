@@ -13,7 +13,7 @@ from tempfile import NamedTemporaryFile
 from pathlib import Path
 
 from . import convert as conv
-from .loggers import mkLogger, loggerAddArgs, logRequest
+from .log import mkLogger, loggerAddArgs, logRequest
 
 
 class Config:
@@ -582,8 +582,10 @@ class Upload:
         file = Path(args.filename)
         # If file is already uploaded, do not upload again.
         for token in hist:
-            if hist[token]["mriFile"] == file.name:
-                raise ValueError(f"{file.name} is in the history log.")
+            if Path(hist[token]["mriFile"]).name == file.name:
+                print(f"{file.name} uploaded already, stopping.")
+                return None
+                # raise ValueError(f"{file.name} is in the history log.")
         
         login = Login(args) # Get username/password information
         url = RAPI.mkURL(args, args.profileNew)
@@ -649,7 +651,7 @@ class Download:
                 
                 logging.info("uploaded filename %s", hist[profileToken]["mriFile"])
 
-                if profileToken in hist and "downloadTime" in hist[profileToken]:
+                if profileToken in hist and "downloadTime" in hist[profileToken] and not args.overwrite:
                     continue  # Already downloaded
 
                 logging.info("profile %s", profile)
@@ -689,7 +691,8 @@ class Download:
                 filename = time_start.strftime("%Y%m%d_%H%M%S")
 
                 ncPath = Path(save_dir, filename + ".nc").expanduser().absolute()
-                logging.info("Saving profile to %s", ncPath)
+                print(f"Saving {ncPath}")
+                logging.info("Saving %s", ncPath)
                 ds.to_netcdf(ncPath)
 
                 # profileToken
@@ -705,6 +708,8 @@ class Download:
                             help="Where to save downloaded files to")
         parser.add_argument("--metadata-file", type=str, default=None,
                             help="File specifying variable names, type IDs, and netCDF metadata")
+        parser.add_argument("--overwrite", action="store_true",
+                            help="Overwrite existing downloads.")
 
 
 def mkParser() -> ArgumentParser:
@@ -734,24 +739,25 @@ def mkParser() -> ArgumentParser:
     return parser
 
 
+def run(args:ArgumentParser) -> None:
+    mapping = {
+        "project": Project,
+        "prj": Project,
+        "upload": Upload,
+        "send": Upload,
+        "download": Download,
+        "get": Download,
+        }
+    mapping[args.cmd](args)
+
+
 def main():
     parser = mkParser()
     args = parser.parse_args()
-
     mkLogger(args, fmt="%(asctime)s %(levelname)s: %(message)s")
-
     logging.info("Args %s", args)
-
-    mapping = {
-            "project": Project,
-            "prj": Project,
-            "upload": Upload,
-            "send": Upload,
-            "download": Download,
-            "get": Download,
-            }
-
-    mapping[args.cmd](args)
+    run(args)
+    
 
 if __name__ == "__main__":
     main()

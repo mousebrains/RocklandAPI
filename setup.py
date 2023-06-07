@@ -13,5 +13,6 @@ setup(
     install_requires=[
         "xarray",
         "netcdf4",
+        "requests",
     ]
 )
