@@ -10,7 +10,7 @@ This package uses `requests` for HTTP requests and `xarray` with `netcdf4` to wr
 
 Install with `pip`:
 
-pip install git+https://github.com/mousebrains/RocklandAPI.git
+`pip install git+https://github.com/mousebrains/RocklandAPI.git`
 
 After installation you will have acess to the command line interface (CLI), e.g.
 
@@ -24,12 +24,15 @@ By default, configuration files are stored in `~/.config/Rockland`
 If the file `credentials.yaml` does not exist in the configuration directory, you will be prompted for a username, password, and organization.
 
 To create a project use:
+
 `rapi project create probar "Probar un proyecto" 123`
 
 To list existing projects use:
+
 `rapi project list`
 
 This project is still in development. To enable debugging, use the `--debug` option, e.g.
+
 `rapi --debug project delete probar`
 
 ## Scripting
@@ -40,14 +43,7 @@ This project is still in development. To enable debugging, use the `--debug` opt
 from pathlib import Path
 from rapi import RAPI
 
-mapping = {
-    "project": RAPI.Project,
-    "upload": RAPI.Upload,
-    "download": RAPI.Download,
-}
-
-project = "A686"
-
+project = "probar"
 data_dir = Path("Dockserver/glider/from-glider")
 save_dir = Path("out")
 
