@@ -661,8 +661,13 @@ class Download:
             if nProfiles == 0: 
                 print("No new profiles to download.")
                 return None  # Return because no profiles to download
+            
+            # Don't try to download too many files at once. (TODO: make this a CLI arg)
+            nProfilesMax = 5
+            recur = True if nProfiles > nProfilesMax else False
+            chop = slice(nProfilesMax) if recur else slice(None)
 
-            params["profileTokens"] = ",".join(params["profileTokens"])
+            params["profileTokens"] = ",".join(params["profileTokens"][chop])
             params["DataTypeIds"] = ",".join(params["DataTypeIds"])
 
             hdrs = RAPI.mkHeaders(login.token(s))
@@ -699,6 +704,9 @@ class Download:
                 hist[bod["profileToken"]]["downloadTime"] = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
                 hist[bod["profileToken"]]["ncFile"] = str(ncPath)
                 config.saveHistory(args.project, hist)
+
+            # Triggered if too many profiles are requested at once.
+            if recur: Download(args)
 
 
     @staticmethod
