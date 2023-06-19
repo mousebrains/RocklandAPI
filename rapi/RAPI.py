@@ -624,7 +624,7 @@ class Upload:
                             help="filetype being uploaded")
 
 class Download:
-    def __init__(self, args:ArgumentParser) -> None:
+    def __init__(self, args:ArgumentParser, skip:list=[]) -> None:
         config = Config(args) # Where config files are located
         login = Login(args) # Get username/password information
         url = RAPI.mkURL(args, args.dataGet)
@@ -642,8 +642,9 @@ class Download:
             params = {
                     "projectToken": token,
                     "DataTypeIds": all_ids,  # Need to be strings!
-                    "profileTokens": [],
                     }
+            
+            profileTokens = []
 
             for key in profiles:
                 profile = profiles[key]
@@ -654,10 +655,13 @@ class Download:
                 if profileToken in hist and "downloadTime" in hist[profileToken] and not args.overwrite:
                     continue  # Already downloaded
 
-                logging.info("profile %s", profile)
-                params["profileTokens"].append(profileToken)
+                if profileToken in skip:
+                    continue  # Already downloaded
 
-            nProfiles = len(params["profileTokens"])
+                logging.info("profile %s", profile)
+                profileTokens.append(profileToken)
+
+            nProfiles = len(profileTokens)
             if nProfiles == 0: 
                 print("No new profiles to download.")
                 return None  # Return because no profiles to download
@@ -667,7 +671,7 @@ class Download:
             recur = True if nProfiles > nProfilesMax else False
             chop = slice(nProfilesMax) if recur else slice(None)
 
-            params["profileTokens"] = ",".join(params["profileTokens"][chop])
+            params["profileTokens"] = ",".join(profileTokens[chop])
             params["DataTypeIds"] = ",".join(params["DataTypeIds"])
 
             hdrs = RAPI.mkHeaders(login.token(s))
@@ -706,7 +710,9 @@ class Download:
                 config.saveHistory(args.project, hist)
 
             # Triggered if too many profiles are requested at once.
-            if recur: Download(args)
+            if recur: 
+                skip = skip + profileTokens[chop]
+                Download(args, skip)
 
 
     @staticmethod

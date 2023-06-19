@@ -115,13 +115,6 @@ def profile_to_Dataset(json_body: dict, file_path: str = None) -> xr.Dataset:
         attrs = {at: info[at] for at in CF_attributes}
         coords[key] = (info["dims"], data[var2idx[key]][0], attrs)
 
-    # The second index should be the coord data
-    ntime = np.size(coords["time"][1])
-
-    n = 0
-    time_dim_lengths = [ntime]
-    time_dim_names = ["time"]
-    # Generate data variables
     data_vars = {}
     for key in data_keys:
         logging.info("data variable %s", key)
@@ -136,27 +129,7 @@ def profile_to_Dataset(json_body: dict, file_path: str = None) -> xr.Dataset:
 
         dat = parse_NaN(dat)
 
-        # Check the time dimension matches
-        nrow = np.size(dat, axis=0)
-        dim_length_mismatch = nrow != ntime
-        dims = [info["dims"]] if type(info["dims"]) is str else info["dims"].copy()
-
-        # Rename time if dimensions mismatch
-        if dim_length_mismatch:
-            if nrow not in time_dim_lengths:
-                n += 1
-                time_dim_lengths.append(nrow)
-                time_dim_names.append(f"time{n}")
-                
-        name = np.asarray(time_dim_names)[
-            np.asarray(time_dim_lengths) == nrow
-        ].item()
-
-        for i in range(len(dims)):
-            if "time" == dims[i]:
-                dims[i] = name
-
-        data_vars[key] = (dims, dat, attrs)
+        data_vars[key] = (info["dims"], dat, attrs)
 
     logging.info("returning xarray.Dataset")
     return xr.Dataset(data_vars, coords)

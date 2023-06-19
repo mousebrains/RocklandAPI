@@ -67,7 +67,7 @@ battery_voltage:
   typeID: 0x210
   standard_name: ""
   long_name: ""
-  units: ""
+  units: "V"
   dims: "time"
 pressure_voltage:
   typeID: 0x220
